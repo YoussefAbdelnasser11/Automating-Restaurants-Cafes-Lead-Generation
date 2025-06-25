@@ -1,0 +1,523 @@
+{
+  "name": "Automating Local Lead Generation with AI & Google Maps",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -40
+      ],
+      "id": "cb876297-8516-45a7-8ec6-b96a412e076f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1BMoI894R9Qto_fRGzV2XVk5xZI5P_OIERkTMt6jgaXE",
+          "mode": "list",
+          "cachedResultName": "Search Queries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BMoI894R9Qto_fRGzV2XVk5xZI5P_OIERkTMt6jgaXE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BMoI894R9Qto_fRGzV2XVk5xZI5P_OIERkTMt6jgaXE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        20,
+        -40
+      ],
+      "id": "187c5c9b-b214-42d8-b371-252dc732a0a0",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qJotOI9YPio7Jcky",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/compass~google-maps-extractor/run-sync-get-dataset-items",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer apify_api_FgeUJBw3diw9NCOIgf95HZcNKqUd2F4jJ8MK"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"language\": \"en\",\n    \"locationQuery\": \"{{ $json.City }}\",\n    \"maxCrawledPlacesPerSearch\": 10,\n    \"searchStringsArray\": [\n        \"{{ $json['Store Type'] }}\"\n    ],\n    \"skipClosedPlaces\": false\n}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        -40
+      ],
+      "id": "39559d5b-8a2b-4d7b-be81-73839085a2a9",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "57f5a503-f127-4424-8b81-a81e592c64aa",
+              "name": "Restaurant",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "c4a68ef3-1e2e-4ef9-bb0f-1cfcbacd3c60",
+              "name": "Address",
+              "value": "={{ $json.address }}",
+              "type": "string"
+            },
+            {
+              "id": "b59c4665-cc7a-4677-b485-b30c55a8a87d",
+              "name": "Phone Number",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "a16fd212-ea19-4bcd-9b5a-6c4771a3a47a",
+              "name": "Website",
+              "value": "={{ $json.website }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        -40
+      ],
+      "id": "de50df97-34e2-4fac-95b1-8af2e2f873e4",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(item => {\n  const website = item.json.Website;\n  return website && typeof website === 'string' && website.trim() !== '';\n});\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        -40
+      ],
+      "id": "ff0a7b0a-2311-4902-bd92-a40f6b9033fa",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        -40
+      ],
+      "id": "df1a1ebe-9c99-45c3-a21c-31ed45e1bf2c",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.Website }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        -20
+      ],
+      "id": "7ea7243e-7e05-435e-ba99-0a3c4a41c47c",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data.length > 5000 ? $json.data.slice(0,5000) : $json.data}} , You are provided a scrape of a website page. your task is to provide two-paragraph abstract of what this page is about.",
+        "options": {
+          "systemMessage": "you are an intelligent website assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        -260
+      ],
+      "id": "38b89575-fe1f-4286-b0e7-949fa7468ba3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1380,
+        -60
+      ],
+      "id": "2eeb630b-7b2d-4614-ab96-d8cf933da624",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xF93nk3bbJDt0PmJ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1580,
+        -20
+      ],
+      "id": "6a5ed34e-bea2-4195-8511-674c78f5c00b",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a B2B Sales Assistant. Your job is to help generate personalized cold outreach messages to potential clients based on information scraped from their website or public profiles. You specialize in creating short, catchy, non-generic icebreakers that grab attention, show research effort, and naturally introduce how your solution fits their business.\n\nYour Focus:\n✔️ Personalized, relevant, attention-grabbing icebreakers\n✔️ Based on subtle website details, not generic compliments\n✔️ Written in a confident, concise, sales-oriented tone\n✔️ Designed to warm up a cold email and increase response rates\n\nInput Example:\nTarget Contact:\nAina Rakotoarinaly, CEO & Founder - Maki Agency / Ti'bouffe, Maki Agency, Outsourcing/Offshoring, Madagascar\n\nWebsite Information:\nMaki Agency is a Madagascar-based digital outsourcing company specializing in web development, design, SEO, content creation, community management, and maintenance. They provide white-label and dedicated resource solutions to businesses looking to outsource technical work. Their tech stack includes CSS, HTML, jQuery, WordPress, PHP, WooCommerce, Laravel, and Odoo. They highlight discretion, project control, quality, and cross-service delivery.\n\nYour Task:\nGenerate a short, catchy, personalized icebreaker in JSON format for a cold email to this prospect. It should reference something specific from their website that shows you've done your research, and naturally create an opening for introducing how your solution fits their needs.\n\nOutput Format:\n{\n  \"icebreaker\": \"Hey Aina. Love how Maki handles white-label dev work—really impressed by how much emphasis you put on discretion and project control. I think we align well—I've been working on lightweight AI automation that reduces human load, connects services, and keeps ops lean. Curious if this could complement your cross-service delivery approach.\"\n}\nSales Bot Guidelines:\n✅ Confident, conversational, short and to the point\n✅ Avoid generic phrases like \"Love your website\"\n✅ Mention something subtle or insightful from their site\n✅ Sound like you've genuinely explored their business\n✅ Make it easy to pivot into introducing your solution\n\nprofile:{{ $('Loop Over Items').item.json.Restaurant }}\n\nData scraped: {{ $('AI Agent').item.json.output }}\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an intelligent sales assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        240
+      ],
+      "id": "066ea37d-d386-45ee-b028-a44bb67371fe",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        400
+      ],
+      "id": "52d2ec54-a26c-4211-82da-ca8bac6b2d86",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xF93nk3bbJDt0PmJ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1BMoI894R9Qto_fRGzV2XVk5xZI5P_OIERkTMt6jgaXE",
+          "mode": "list",
+          "cachedResultName": "Search Queries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BMoI894R9Qto_fRGzV2XVk5xZI5P_OIERkTMt6jgaXE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1735049851,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BMoI894R9Qto_fRGzV2XVk5xZI5P_OIERkTMt6jgaXE/edit#gid=1735049851"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "City": "={{ $('Google Sheets').item.json.City }}",
+            "Store Type": "={{ $('Google Sheets').item.json['Store Type'] }}",
+            "Tittle": "={{ $('Code').item.json.Restaurant }}",
+            "address": "={{ $('Code').item.json.Address }}",
+            "Website": "={{ $('Code').item.json.Website }}",
+            "Icebreaker": "={{ $json.output }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Store Type",
+              "displayName": "Store Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tittle",
+              "displayName": "Tittle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Icebreaker",
+              "displayName": "Icebreaker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1660,
+        400
+      ],
+      "id": "92db46ad-d627-44ba-ab80-0cbf285c1a3d",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qJotOI9YPio7Jcky",
+          "name": "Google Sheets account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1180d917-5e1d-4314-8d77-34afdfb3442c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "42b296de8e6ed15d232925b66cd240f8d57407dac024b16a8ff33774eeff0de4"
+  },
+  "id": "URGmJmUh3IjZTlVh",
+  "tags": []
+}
